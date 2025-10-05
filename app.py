@@ -15,34 +15,38 @@ CORS(app)
 GROQ_API_KEY = os.getenv('GROQ_API_KEY', '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')
 GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
 
-DB_NAME = 'finance.db'
+DATABASE_URL = os.getenv('DATABASE_URL')
+
+def get_db_connection():
+    conn = psycopg2.connect(DATABASE_URL)
+    return conn
 
 def init_db():
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_db_connection()
     c = conn.cursor()
     
     c.execute('''CREATE TABLE IF NOT EXISTS expenses (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         amount REAL NOT NULL,
         category TEXT NOT NULL,
         date TEXT NOT NULL,
         payment_method TEXT NOT NULL,
         description TEXT,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )''')
     
     c.execute('''CREATE TABLE IF NOT EXISTS goals (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         name TEXT NOT NULL,
         target REAL NOT NULL,
         current REAL DEFAULT 0,
         deadline TEXT NOT NULL,
         priority TEXT DEFAULT 'medium',
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )''')
     
     c.execute('''CREATE TABLE IF NOT EXISTS categories (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         name TEXT UNIQUE NOT NULL
     )''')
     
@@ -50,8 +54,8 @@ def init_db():
     conn.close()
 
 def get_db():
-    conn = sqlite3.connect(DB_NAME)
-    conn.row_factory = sqlite3.Row
+    conn = get_db_connection()
+    conn.cursor_factory = RealDictCursor
     return conn
 
 # EXPENSES ENDPOINTS
@@ -156,7 +160,7 @@ def add_category():
         conn.commit()
         conn.close()
         return jsonify({'status': 'success'}), 201
-    except sqlite3.IntegrityError:
+    except psycopg2.IntegrityError:
         conn.close()
         return jsonify({'error': 'Category already exists'}), 400
 
