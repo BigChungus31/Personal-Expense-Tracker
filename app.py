@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import psycopg2
-from psycopg2.extras import RealDictCursor
+import psycopg
+from psycopg.rows import dict_row
 import os
 from datetime import datetime, timedelta
 import requests
@@ -55,7 +55,7 @@ def init_db():
 
 def get_db():
     conn = get_db_connection()
-    conn.cursor_factory = RealDictCursor
+    conn.row_factory = dict_row
     return conn
 
 # EXPENSES ENDPOINTS
@@ -160,7 +160,7 @@ def add_category():
         conn.commit()
         conn.close()
         return jsonify({'status': 'success'}), 201
-    except psycopg2.IntegrityError:
+    except psycopg.IntegrityError:
         conn.close()
         return jsonify({'error': 'Category already exists'}), 400
 
