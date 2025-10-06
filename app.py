@@ -74,9 +74,9 @@ def add_expense():
     conn = get_db()
     c = conn.cursor()
     c.execute('''INSERT INTO expenses (amount, category, date, payment_method, description)
-                 VALUES (?, ?, ?, ?, ?)''',
-              (data['amount'], data['category'], data['date'], 
-               data['paymentMethod'], data.get('description', '')))
+             VALUES (%s, %s, %s, %s, %s)''',
+          (data['amount'], data['category'], data['date'], 
+           data['paymentMethod'], data.get('description', '')))
     conn.commit()
     expense_id = c.lastrowid
     conn.close()
@@ -87,8 +87,8 @@ def update_expense(expense_id):
     data = request.json
     conn = get_db()
     conn.execute('''UPDATE expenses 
-                    SET amount = ?, category = ?, date = ?, payment_method = ?, description = ?
-                    WHERE id = ?''',
+                    SET amount = %s, category = %s, date = %s, payment_method = %s, description = %s
+                    WHERE id = %s''',
                  (data['amount'], data['category'], data['date'], 
                   data['paymentMethod'], data.get('description', ''), expense_id))
     conn.commit()
@@ -98,7 +98,7 @@ def update_expense(expense_id):
 @app.route('/api/expenses/<int:expense_id>', methods=['DELETE'])
 def delete_expense(expense_id):
     conn = get_db()
-    conn.execute('DELETE FROM expenses WHERE id = ?', (expense_id,))
+    conn.execute('DELETE FROM expenses WHERE id = %s', (expense_id,))
     conn.commit()
     conn.close()
     return jsonify({'status': 'success'})
@@ -117,7 +117,7 @@ def add_goal():
     conn = get_db()
     c = conn.cursor()
     c.execute('''INSERT INTO goals (name, target, deadline, priority)
-                 VALUES (?, ?, ?, ?)''',
+                 VALUES (%s, %s, %s, %s)''',
               (data['name'], data['target'], data['deadline'], data.get('priority', 'medium')))
     conn.commit()
     goal_id = c.lastrowid
@@ -129,8 +129,8 @@ def update_goal(goal_id):
     data = request.json
     conn = get_db()
     conn.execute('''UPDATE goals 
-                    SET name = ?, target = ?, current = ?, deadline = ?, priority = ?
-                    WHERE id = ?''',
+                    SET name = %s, target = %s, current = %s, deadline = %s, priority = %s
+                    WHERE id = %s''',
                  (data['name'], data['target'], data.get('current', 0), 
                   data['deadline'], data.get('priority', 'medium'), goal_id))
     conn.commit()
@@ -140,7 +140,7 @@ def update_goal(goal_id):
 @app.route('/api/goals/<int:goal_id>', methods=['DELETE'])
 def delete_goal(goal_id):
     conn = get_db()
-    conn.execute('DELETE FROM goals WHERE id = ?', (goal_id,))
+    conn.execute('DELETE FROM goals WHERE id = %s', (goal_id,))
     conn.commit()
     conn.close()
     return jsonify({'status': 'success'})
@@ -158,7 +158,7 @@ def add_category():
     data = request.json
     conn = get_db()
     try:
-        conn.execute('INSERT INTO categories (name) VALUES (?)', (data['name'],))
+        conn.execute('INSERT INTO categories (name) VALUES (%s)', (data['name'],))
         conn.commit()
         conn.close()
         return jsonify({'status': 'success'}), 201
@@ -180,17 +180,17 @@ def get_summary():
         start_date = (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d')
     
     total = conn.execute(
-        'SELECT SUM(amount) as total FROM expenses WHERE date >= ?',
+        'SELECT SUM(amount) as total FROM expenses WHERE date >= %s',
         (start_date,)
     ).fetchone()
     
     by_category = conn.execute(
-        'SELECT category, SUM(amount) as total FROM expenses WHERE date >= ? GROUP BY category',
+        'SELECT category, SUM(amount) as total FROM expenses WHERE date >= %s GROUP BY category',
         (start_date,)
     ).fetchall()
     
     by_payment = conn.execute(
-        'SELECT payment_method, SUM(amount) as total FROM expenses WHERE date >= ? GROUP BY payment_method',
+        'SELECT payment_method, SUM(amount) as total FROM expenses WHERE date >= %s GROUP BY payment_method',
         (start_date,)
     ).fetchall()
     
@@ -323,7 +323,7 @@ def get_projections():
     # Get average monthly spending from last 3 months
     three_months_ago = (datetime.now() - timedelta(days=90)).strftime('%Y-%m-%d')
     expenses = conn.execute(
-        'SELECT amount, date FROM expenses WHERE date >= ?',
+        'SELECT amount, date FROM expenses WHERE date >= %s',
         (three_months_ago,)
     ).fetchall()
     
