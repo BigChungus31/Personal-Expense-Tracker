@@ -105,9 +105,6 @@ pip install -r requirements.txt
 ```bash
 # Check if .env exists
 cat .env
-
-# Should contain:
-# GROQ_API_KEY=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
 ```
 
 5. **Start the backend server**
@@ -406,7 +403,7 @@ python test_groq.py
 
 Should show:
 ```
-Testing API Key: gsk_um9b5skEdil8yFSg...
+Testing API Key: iubkjboblkb...
 Status Code: 200
 API Key is valid!
 ```
@@ -539,13 +536,10 @@ flask run --port 5001
 4. Check browser console for errors (F12)
 
 ### AI Chat not working
-```bash
-# Test Groq API
-python test_groq.py
-
+```
 # Common issues:
 # - Invalid API key
-# - Model decommissioned (use llama-3.3-70b-versatile)
+# - Model decommissioned
 # - Rate limit exceeded
 # - Network/firewall blocking
 ```
@@ -628,9 +622,6 @@ A: Yes! Edit `app.py` and change the model name. Check [Groq's models](https://c
 
 **Q: How do I backup my data?**  
 A: Copy the `finance.db` file to a safe location.
-
-**Q: Can I use PostgreSQL instead of SQLite?**  
-A: Yes! Install `psycopg2` and update the database connection in `app.py`.
 
 **Q: Is my data private?**  
 A: Yes! All data is stored locally in `finance.db`. Only chat messages are sent to Groq API.
