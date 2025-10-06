@@ -8,6 +8,13 @@ A beautiful, intelligent desktop web application for tracking expenses, visualiz
 ![Flask](https://img.shields.io/badge/Flask-3.0+-green)
 
 ---
+## Live Demo
+
+**Try it now:** [https://personal-expense-tracker-frontend-43yd.onrender.com/](https://personal-expense-tracker-frontend-43yd.onrender.com/)
+
+*Note: First load may take 30-60 seconds as the free tier backend wakes up.*
+
+---
 
 ## Features
 
@@ -53,7 +60,8 @@ A beautiful, intelligent desktop web application for tracking expenses, visualiz
 ### Backend
 - **Python 3.8+** - Core language
 - **Flask 3.0** - Web framework & REST API
-- **SQLite** - Local database (zero config)
+- **PostgreSQL** - Production database (deployed on Render)
+- **psycopg** - PostgreSQL adapter for Python
 - **Flask-CORS** - Cross-origin resource sharing
 - **python-dotenv** - Environment variable management
 - **Requests** - HTTP library for Groq API
@@ -290,33 +298,33 @@ NEW EXPENSE TRACKER
 ### expenses
 ```sql
 CREATE TABLE expenses (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     amount REAL NOT NULL,
     category TEXT NOT NULL,
     date TEXT NOT NULL,
     payment_method TEXT NOT NULL,
     description TEXT,
-    created_at TEXT DEFAULT CURRENT_timestamp
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
 ### goals
 ```sql
 CREATE TABLE goals (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     target REAL NOT NULL,
     current REAL DEFAULT 0,
     deadline TEXT NOT NULL,
     priority TEXT DEFAULT 'medium',
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
 ### categories
 ```sql
 CREATE TABLE categories (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     name TEXT UNIQUE NOT NULL
 );
 ```
@@ -449,50 +457,51 @@ Edit `app.py` line ~150:
 
 ## Deployment
 
-### Backend Deployment (Render/Railway/Heroku)
+### Live Production URLs
+- **Frontend**: https://personal-expense-tracker-frontend-43yd.onrender.com/
+- **Backend API**: https://personal-expense-tracker-01c6.onrender.com
+- **Database**: PostgreSQL on Render
 
-1. **Create `Procfile`:**
-```
-web: python app.py
-```
+### Backend Deployment (Render)
 
-2. **Update `app.py` for production:**
-```python
-if __name__ == '__main__':
-    init_db()
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
-```
+1. **Create PostgreSQL Database:**
+   - New → PostgreSQL
+   - Name: `finance-db`
+   - Plan: Free
+   - Copy the Internal Database URL
 
-3. **Add environment variables:**
-- `GROQ_API_KEY`
-- `FLASK_ENV=production`
+2. **Create Web Service:**
+   - New → Web Service
+   - Connect your GitHub repository
+   - Settings:
+     - **Build Command**: `pip install -r requirements.txt`
+     - **Start Command**: `gunicorn app:app`
+     - **Environment Variables**:
+       - `DATABASE_URL`: (PostgreSQL Internal URL)
+       - `GROQ_API_KEY`: (Your Groq API key)
+       - `FLASK_ENV`: `production`
 
-4. **Deploy:**
-- Push to GitHub
-- Connect to Render/Railway
-- Deploy automatically
+3. **Add `runtime.txt`** (if using Python 3.11):
 
-### Frontend Deployment (Vercel/Netlify)
+### Frontend Deployment (Render Static Site)
 
-1. **Update API URL in `App.js`:**
-```javascript
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-```
+1. **Create Static Site:**
+   - New → Static Site
+   - Connect same repository
+   - Settings:
+     - **Root Directory**: `frontend`
+     - **Build Command**: `npm install && npm run build`
+     - **Publish Directory**: `build`
+     - **Environment Variable**:
+       - `REACT_APP_API_URL`: `https://personal-expense-tracker-01c6.onrender.com`
 
-2. **Build:**
-```bash
-npm run build
-```
+2. **Deploy** - Render will auto-deploy from GitHub
 
-3. **Deploy:**
-- Vercel: `vercel deploy`
-- Netlify: Drag & drop `build` folder
-
-4. **Set environment variable:**
-```
-REACT_APP_API_URL=https://your-backend.onrender.com/api
-```
+### Important PostgreSQL Notes
+- Uses `%s` placeholders instead of `?` (SQLite syntax)
+- `SERIAL` instead of `AUTOINCREMENT`
+- Database persists between deployments
+- Free tier includes 1GB storage
 
 ---
 
@@ -500,7 +509,7 @@ REACT_APP_API_URL=https://your-backend.onrender.com/api
 
 ### Important Notes
 - **Never commit `.env`** to version control
-- SQLite is for **development only** - use PostgreSQL in production
+- **Production uses PostgreSQL** - more robust than SQLite
 - Add **authentication** before deploying publicly
 - Implement **rate limiting** for API endpoints
 - Use **HTTPS** in production
@@ -549,8 +558,15 @@ flask run --port 5001
 # Delete and recreate database
 rm finance.db
 python app.py  # Will auto-create new database
-```
 
+```
+### PostgreSQL Connection Issues
+```bash
+# Check DATABASE_URL is set correctly in Render
+# Format: postgresql://user:password@host:port/database
+
+# Test connection locally (if using PostgreSQL locally)
+psql $DATABASE_URL
 ### Charts not showing
 1. Add some expenses first
 2. Check browser console (F12)
@@ -567,6 +583,8 @@ Flask==3.0.0
 flask-cors==4.0.0
 python-dotenv==1.0.0
 requests==2.31.0
+gunicorn==21.2.0
+psycopg[binary]==3.2.10
 ```
 
 ### Frontend (`package.json`)
