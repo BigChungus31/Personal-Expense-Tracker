@@ -20,7 +20,7 @@ GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
 DATABASE_URL = os.getenv('DATABASE_URL')
 
 def get_db_connection():
-    conn = psycopg2.connect(DATABASE_URL)
+    conn = psycopg.connect(DATABASE_URL)
     return conn
 
 def init_db():
