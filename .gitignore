@@ -5,3 +5,4 @@ __pycache__/
 finance.db
 node_modules/
 frontend/build/
+*.db
