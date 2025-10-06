@@ -207,7 +207,6 @@ NEW EXPENSE TRACKER
 ├── requirements.txt
 ├── test_backend.py
 ├── test_chat.py
-└── test_groq.py
 
 ```
 
@@ -402,11 +401,6 @@ All endpoints working!
 ### Test Chat Functionality
 ```bash
 python test_chat.py
-```
-
-### Test Groq API
-```bash
-python test_groq.py
 ```
 
 Should show:
