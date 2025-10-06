@@ -55,114 +55,128 @@ def init_db():
     conn.commit()
     conn.close()
 
-def get_db():
-    conn = get_db_connection()
-    conn.row_factory = dict_row
-    return conn
-
 # EXPENSES ENDPOINTS
 @app.route('/api/expenses', methods=['GET'])
 def get_expenses():
-    conn = get_db()
-    expenses = conn.execute('SELECT * FROM expenses ORDER BY date DESC').fetchall()
+    conn = get_db_connection()
+    cursor = conn.cursor(row_factory=dict_row)
+    expenses = cursor.execute('SELECT * FROM expenses ORDER BY date DESC').fetchall()
+    cursor.close()
     conn.close()
-    return jsonify([dict(row) for row in expenses])
+    return jsonify(expenses)
 
 @app.route('/api/expenses', methods=['POST'])
 def add_expense():
     data = request.json
-    conn = get_db()
-    c = conn.cursor()
-    c.execute('''INSERT INTO expenses (amount, category, date, payment_method, description)
-             VALUES (%s, %s, %s, %s, %s)''',
-          (data['amount'], data['category'], data['date'], 
-           data['paymentMethod'], data.get('description', '')))
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''INSERT INTO expenses (amount, category, date, payment_method, description)
+                      VALUES (%s, %s, %s, %s, %s) RETURNING id''',
+                   (data['amount'], data['category'], data['date'], 
+                    data['paymentMethod'], data.get('description', '')))
+    expense_id = cursor.fetchone()[0]
     conn.commit()
-    expense_id = c.lastrowid
+    cursor.close()
     conn.close()
     return jsonify({'id': expense_id, 'status': 'success'}), 201
 
 @app.route('/api/expenses/<int:expense_id>', methods=['PUT'])
 def update_expense(expense_id):
     data = request.json
-    conn = get_db()
-    conn.execute('''UPDATE expenses 
-                    SET amount = %s, category = %s, date = %s, payment_method = %s, description = %s
-                    WHERE id = %s''',
-                 (data['amount'], data['category'], data['date'], 
-                  data['paymentMethod'], data.get('description', ''), expense_id))
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''UPDATE expenses 
+                      SET amount = %s, category = %s, date = %s, payment_method = %s, description = %s
+                      WHERE id = %s''',
+                   (data['amount'], data['category'], data['date'], 
+                    data['paymentMethod'], data.get('description', ''), expense_id))
     conn.commit()
+    cursor.close()
     conn.close()
     return jsonify({'status': 'success'})
 
 @app.route('/api/expenses/<int:expense_id>', methods=['DELETE'])
 def delete_expense(expense_id):
-    conn = get_db()
-    conn.execute('DELETE FROM expenses WHERE id = %s', (expense_id,))
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM expenses WHERE id = %s', (expense_id,))
     conn.commit()
+    cursor.close()
     conn.close()
     return jsonify({'status': 'success'})
 
 # GOALS ENDPOINTS
 @app.route('/api/goals', methods=['GET'])
 def get_goals():
-    conn = get_db()
-    goals = conn.execute('SELECT * FROM goals ORDER BY deadline ASC').fetchall()
+    conn = get_db_connection()
+    cursor = conn.cursor(row_factory=dict_row)
+    goals = cursor.execute('SELECT * FROM goals ORDER BY deadline ASC').fetchall()
+    cursor.close()
     conn.close()
-    return jsonify([dict(row) for row in goals])
+    return jsonify(goals)
 
 @app.route('/api/goals', methods=['POST'])
 def add_goal():
     data = request.json
-    conn = get_db()
-    c = conn.cursor()
-    c.execute('''INSERT INTO goals (name, target, deadline, priority)
-                 VALUES (%s, %s, %s, %s)''',
-              (data['name'], data['target'], data['deadline'], data.get('priority', 'medium')))
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''INSERT INTO goals (name, target, deadline, priority)
+                      VALUES (%s, %s, %s, %s) RETURNING id''',
+                   (data['name'], data['target'], data['deadline'], data.get('priority', 'medium')))
+    goal_id = cursor.fetchone()[0]
     conn.commit()
-    goal_id = c.lastrowid
+    cursor.close()
     conn.close()
     return jsonify({'id': goal_id, 'status': 'success'}), 201
 
 @app.route('/api/goals/<int:goal_id>', methods=['PUT'])
 def update_goal(goal_id):
     data = request.json
-    conn = get_db()
-    conn.execute('''UPDATE goals 
-                    SET name = %s, target = %s, current = %s, deadline = %s, priority = %s
-                    WHERE id = %s''',
-                 (data['name'], data['target'], data.get('current', 0), 
-                  data['deadline'], data.get('priority', 'medium'), goal_id))
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''UPDATE goals 
+                      SET name = %s, target = %s, current = %s, deadline = %s, priority = %s
+                      WHERE id = %s''',
+                   (data['name'], data['target'], data.get('current', 0), 
+                    data['deadline'], data.get('priority', 'medium'), goal_id))
     conn.commit()
+    cursor.close()
     conn.close()
     return jsonify({'status': 'success'})
 
 @app.route('/api/goals/<int:goal_id>', methods=['DELETE'])
 def delete_goal(goal_id):
-    conn = get_db()
-    conn.execute('DELETE FROM goals WHERE id = %s', (goal_id,))
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM goals WHERE id = %s', (goal_id,))
     conn.commit()
+    cursor.close()
     conn.close()
     return jsonify({'status': 'success'})
 
 # CATEGORIES ENDPOINTS
 @app.route('/api/categories', methods=['GET'])
 def get_categories():
-    conn = get_db()
-    categories = conn.execute('SELECT name FROM categories').fetchall()
+    conn = get_db_connection()
+    cursor = conn.cursor(row_factory=dict_row)
+    categories = cursor.execute('SELECT name FROM categories').fetchall()
+    cursor.close()
     conn.close()
     return jsonify([row['name'] for row in categories])
 
 @app.route('/api/categories', methods=['POST'])
 def add_category():
     data = request.json
-    conn = get_db()
+    conn = get_db_connection()
+    cursor = conn.cursor()
     try:
-        conn.execute('INSERT INTO categories (name) VALUES (%s)', (data['name'],))
+        cursor.execute('INSERT INTO categories (name) VALUES (%s)', (data['name'],))
         conn.commit()
+        cursor.close()
         conn.close()
         return jsonify({'status': 'success'}), 201
     except psycopg.IntegrityError:
+        cursor.close()
         conn.close()
         return jsonify({'error': 'Category already exists'}), 400
 
@@ -170,7 +184,8 @@ def add_category():
 @app.route('/api/analytics/summary', methods=['GET'])
 def get_summary():
     period = request.args.get('period', 'month')
-    conn = get_db()
+    conn = get_db_connection()
+    cursor = conn.cursor(row_factory=dict_row)
     
     if period == 'week':
         start_date = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
@@ -179,27 +194,28 @@ def get_summary():
     else:
         start_date = (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d')
     
-    total = conn.execute(
+    total = cursor.execute(
         'SELECT SUM(amount) as total FROM expenses WHERE date >= %s',
         (start_date,)
     ).fetchone()
     
-    by_category = conn.execute(
+    by_category = cursor.execute(
         'SELECT category, SUM(amount) as total FROM expenses WHERE date >= %s GROUP BY category',
         (start_date,)
     ).fetchall()
     
-    by_payment = conn.execute(
+    by_payment = cursor.execute(
         'SELECT payment_method, SUM(amount) as total FROM expenses WHERE date >= %s GROUP BY payment_method',
         (start_date,)
     ).fetchall()
     
+    cursor.close()
     conn.close()
     
     return jsonify({
         'total': total['total'] if total['total'] else 0,
-        'by_category': [dict(row) for row in by_category],
-        'by_payment': [dict(row) for row in by_payment]
+        'by_category': by_category,
+        'by_payment': by_payment
     })
 
 # AI CHAT ENDPOINT
@@ -318,16 +334,18 @@ Be conversational, never robotic or interrogative."""
 @app.route('/api/projections', methods=['GET'])
 def get_projections():
     months = int(request.args.get('months', 3))
-    conn = get_db()
+    conn = get_db_connection()
+    cursor = conn.cursor(row_factory=dict_row)
     
     # Get average monthly spending from last 3 months
     three_months_ago = (datetime.now() - timedelta(days=90)).strftime('%Y-%m-%d')
-    expenses = conn.execute(
+    expenses = cursor.execute(
         'SELECT amount, date FROM expenses WHERE date >= %s',
         (three_months_ago,)
     ).fetchall()
     
     if not expenses:
+        cursor.close()
         conn.close()
         return jsonify({'projections': [], 'message': 'Not enough data for projections'})
     
@@ -343,6 +361,7 @@ def get_projections():
             'projected_expenses': round(projected_amount, 2)
         })
     
+    cursor.close()
     conn.close()
     return jsonify({'projections': projections, 'avg_monthly': round(avg_monthly, 2)})
 
