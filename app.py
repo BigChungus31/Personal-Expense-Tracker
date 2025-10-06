@@ -12,7 +12,9 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-GROQ_API_KEY = os.getenv('GROQ_API_KEY', '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')
+GROQ_API_KEY = os.getenv('GROQ_API_KEY')
+if not GROQ_API_KEY:
+    raise ValueError("GROQ_API_KEY environment variable is not set")
 GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
 
 DATABASE_URL = os.getenv('DATABASE_URL')
@@ -372,6 +374,14 @@ def home():
             'projections': '/api/projections'
         }
     })
+
+# Initialize database on startup
+with app.app_context():
+    try:
+        init_db()
+        print("Database initialized successfully")
+    except Exception as e:
+        print(f"Database initialization error: {e}")
 
 if __name__ == '__main__':
     init_db()
